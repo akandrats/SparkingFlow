@@ -1,9 +1,10 @@
 version: '3'
 
 x-spark-common: &spark-common
-  image: bitnami/spark:latest
+  image: bitnami/spark:3.4.2
   volumes:
     - ./jobs:/opt/bitnami/spark/jobs
+    - ./data:/opt/data
   networks:
     - code-with-yu
 
@@ -17,6 +18,7 @@ x-airflow-common: &airflow-common
     - ./jobs:/opt/airflow/jobs
     - ./dags:/opt/airflow/dags
     - ./logs:/opt/airflow/logs
+    - ./data:/opt/data
   depends_on:
     - postgres
   networks:
@@ -60,7 +62,7 @@ services:
 
   scheduler:
     <<: *airflow-common
-    command: bash -c "airflow db migrate && airflow users create --username admin --firstname Yusuf --lastname Ganiyu --role Admin --email airscholar@gmail.com --password admin && airflow scheduler"
+    command: bash -c "airflow db migrate && airflow users create --username admin --firstname Anastasiya --lastname Kandratsiuk --role Admin --email anastasiya.kandratsiuk@gmail.com --password admin && airflow scheduler"
 
 networks:
   code-with-yu:
