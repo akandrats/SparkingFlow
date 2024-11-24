@@ -4,17 +4,17 @@ from airflow.operators.python import PythonOperator
 from airflow.providers.apache.spark.operators.spark_submit import SparkSubmitOperator
 
 dag = DAG(
-    dag_id = "win_log_flow",
-    default_args = {
+    dag_id="win_log_flow",
+    default_args={
         "owner": "Team D",
         "start_date": airflow.utils.dates.days_ago(1)
     },
-    schedule_interval = "@daily"
+    schedule_interval="@daily"
 )
 
 start = PythonOperator(
     task_id="start",
-    python_callable = lambda: print("Jobs started"),
+    python_callable=lambda: print("Jobs started"),
     dag=dag
 )
 
@@ -29,14 +29,38 @@ python_job = SparkSubmitOperator(
     task_id="read_data",
     conn_id="spark-conn",
     application="jobs/python/repartition.py",
-    application_args=["/opt/data/source/windows_log_sample.csv", "3", "/opt/data/bronze/windows_log.csv"],
+    application_args=["/opt/data/source/windows_log_sample.csv", "3", "/opt/data/bronze/windows_log"],
+    dag=dag
+)
+
+python_job_silver_1 = SparkSubmitOperator(
+    task_id="normalize_data_event_type",
+    conn_id="spark-conn",
+    application="jobs/python/normalize_data.py",
+    application_args=["/opt/data/bronze/windows_log", "3", "/opt/data/silver/event_type"],
+    dag=dag
+)
+
+python_job_silver_2 = SparkSubmitOperator(
+    task_id="normalize_data_session",
+    conn_id="spark-conn",
+    application="jobs/python/normalize_data_session.py",
+    application_args=["/opt/data/bronze/windows_log", "3", "/opt/data/silver/session"],
+    dag=dag
+)
+
+python_job_silver_3 = SparkSubmitOperator(
+    task_id="normalize_data_outliners",
+    conn_id="spark-conn",
+    application="jobs/python/normalize_data_outliners.py",
+    application_args=["/opt/data/bronze/windows_log", "3", "/opt/data/silver/outliners"],
     dag=dag
 )
 
 end = PythonOperator(
     task_id="end",
-    python_callable = lambda: print("Jobs completed successfully"),
+    python_callable=lambda: print("Jobs completed successfully"),
     dag=dag
 )
 
-start >> healthcheck_job >> python_job >> end
+start >> healthcheck_job >> python_job >> python_job_silver_1 >> python_job_silver_2 >> end
