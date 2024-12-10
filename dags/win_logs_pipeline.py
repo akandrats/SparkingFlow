@@ -57,10 +57,34 @@ python_job_silver_3 = SparkSubmitOperator(
     dag=dag
 )
 
+python_job_gold_1 = SparkSubmitOperator(
+    task_id="aggregate_event_type",
+    conn_id="spark-conn",
+    application="jobs/python/aggregate_event_type.py",
+    application_args=["/opt/data/silver/event_type","/opt/data/gold/event_type"],
+    dag=dag
+)
+
+python_job_gold_2 = SparkSubmitOperator(
+    task_id="aggregate_session",
+    conn_id="spark-conn",
+    application="jobs/python/aggregate_session.py",
+    application_args=["/opt/data/silver/session", "/opt/data/gold/session"],
+    dag=dag
+)
+
+python_job_gold_3 = SparkSubmitOperator(
+    task_id="aggregate_outliners",
+    conn_id="spark-conn",
+    application="jobs/python/aggregate_outliners.py",
+    application_args=["/opt/data/silver/outliners", "/opt/data/gold/outliners"],
+    dag=dag
+)
+
 end = PythonOperator(
     task_id="end",
     python_callable=lambda: print("Jobs completed successfully"),
     dag=dag
 )
 
-start >> healthcheck_job >> python_job >> python_job_silver_1 >> python_job_silver_2 >> end
+start >> healthcheck_job >> python_job >> python_job_silver_1 >> python_job_silver_2 >> python_job_silver_3 >> python_job_gold_1 >> python_job_gold_2 >> python_job_gold_3 >> end
