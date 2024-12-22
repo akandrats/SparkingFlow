@@ -14,7 +14,7 @@ Host spark://172.19.0.3 (to się sprawdza tu http://localhost:9090/ na samej gó
 port 7077
 
 Diagram:
-![Project diagram](diagram/BigData_windowslog_grupa_D_12_10_24.png)
+![Project diagram](diagram/BigData_windowslog_grupa_D_10_12_24.png)
 
 
 Template from https://github.com/airscholar/SparkingFlow 
