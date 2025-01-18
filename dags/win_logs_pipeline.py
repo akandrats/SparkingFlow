@@ -25,11 +25,18 @@ healthcheck_job = SparkSubmitOperator(
     dag=dag
 )
 
+healthcheck_job_2 = SparkSubmitOperator(
+    task_id="healthcheck_stage_2",
+    conn_id="spark-conn",
+    application="jobs/python/wordcountjob.py",
+    dag=dag
+)
+
 python_job = SparkSubmitOperator(
     task_id="read_data",
     conn_id="spark-conn",
     application="jobs/python/repartition.py",
-    application_args=["/opt/data/source/windows_log_sample.csv", "3", "/opt/data/bronze/windows_log"],
+    application_args=["/opt/data/source/windows_log_sample_10gb.csv", "50", "/opt/data/bronze/windows_log"],
     dag=dag
 )
 
@@ -37,7 +44,7 @@ python_job_silver_1 = SparkSubmitOperator(
     task_id="normalize_data_event_type",
     conn_id="spark-conn",
     application="jobs/python/normalize_data.py",
-    application_args=["/opt/data/bronze/windows_log", "3", "/opt/data/silver/event_type"],
+    application_args=["/opt/data/bronze/windows_log", "50", "/opt/data/silver/event_type"],
     dag=dag
 )
 
@@ -45,7 +52,7 @@ python_job_silver_2 = SparkSubmitOperator(
     task_id="normalize_data_session",
     conn_id="spark-conn",
     application="jobs/python/normalize_data_session.py",
-    application_args=["/opt/data/bronze/windows_log", "3", "/opt/data/silver/session"],
+    application_args=["/opt/data/bronze/windows_log", "50", "/opt/data/silver/session"],
     dag=dag
 )
 
@@ -53,7 +60,7 @@ python_job_silver_3 = SparkSubmitOperator(
     task_id="normalize_data_outliners",
     conn_id="spark-conn",
     application="jobs/python/normalize_data_outliners.py",
-    application_args=["/opt/data/bronze/windows_log", "3", "/opt/data/silver/outliners"],
+    application_args=["/opt/data/bronze/windows_log", "50", "/opt/data/silver/outliners"],
     dag=dag
 )
 
@@ -61,7 +68,7 @@ python_job_gold_1 = SparkSubmitOperator(
     task_id="aggregate_event_type",
     conn_id="spark-conn",
     application="jobs/python/aggregate_event_type.py",
-    application_args=["/opt/data/silver/event_type","/opt/data/gold/event_type"],
+    application_args=["/opt/data/silver/event_type", "/opt/data/gold/event_type"],
     dag=dag
 )
 
@@ -87,4 +94,7 @@ end = PythonOperator(
     dag=dag
 )
 
-start >> healthcheck_job >> python_job >> python_job_silver_1 >> python_job_silver_2 >> python_job_silver_3 >> python_job_gold_1 >> python_job_gold_2 >> python_job_gold_3 >> end
+silver_tasks = [python_job_silver_1, python_job_silver_2, python_job_silver_3]
+gold_tasks = [python_job_gold_1, python_job_gold_2, python_job_gold_3]
+
+start >> healthcheck_job >> python_job >> silver_tasks >> healthcheck_job_2 >> gold_tasks >> end

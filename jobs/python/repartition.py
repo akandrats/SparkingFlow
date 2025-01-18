@@ -6,7 +6,7 @@ input_path = sys.argv[1]
 repartition_num = int(sys.argv[2])
 output_path = sys.argv[3]
 
-df = spark.read.csv(input_path, header=False)
+df = spark.read.csv(input_path, header=False).limit(100000)
 
 df.show(truncate=False)
 
